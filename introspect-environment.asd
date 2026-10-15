@@ -3,7 +3,8 @@
   :author "Bike <aeshtaer@gmail.com>"
   :license "WTFPL"
   :version "0.1"
-  :depends-on (#+sbcl #:sb-cltl2)
+  :depends-on (#+sbcl #:sb-cltl2
+	       #+ecl #:alexandria)
   :serial t
   :components ((:file "package")
 	       (:file "expander")

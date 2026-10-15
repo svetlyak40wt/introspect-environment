@@ -54,11 +54,10 @@
 ;; NOTE: Also the second return value is pretty unreliable
 ;; for these.
 
-#+(or abcl allegro clisp ecl lispworks)
-(progn
 #+ecl
-(defun ecl-new-deftype-api-p ()
-  "Does ECL use the two-argument DEFTYPE expander API?
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun ecl-new-deftype-api-p ()
+    "Does ECL use the two-argument DEFTYPE expander API?
 
 The API changed in ECL 26.3.27.  See the ECL changelog entry
 \"deftype: implement &environment parameters\":
@@ -66,7 +65,10 @@ https://gitlab.com/embeddable-common-lisp/ecl/-/commit/deefc21c9d476521f6456bb9f
 
 That commit is included in the \"ECL 26.3.27 release\" section:
 https://ecl.common-lisp.dev/posts/ECL-26327-release.html"
-  (>= (parse-integer (lisp-implementation-version) :junk-allowed t) 26))
+    (>= (parse-integer (lisp-implementation-version) :junk-allowed t) 26)))
+
+#+(or abcl allegro clisp ecl lispworks)
+(progn
 
 #+(or abcl ecl)
 (defun expand-deftype-1 (type)
@@ -78,9 +80,9 @@ https://ecl.common-lisp.dev/posts/ECL-26327-release.html"
     (let ((expander (system::get-sysprop base 'system::DEFTYPE-DEFINITION)))
       (if expander
           (values
-           #+ecl(if (ecl-new-deftype-api-p)
-                     (funcall expander (if (atom type) (list type) type) nil)
-                     (funcall expander args))
+           #+ecl #.(if (ecl-new-deftype-api-p)
+                       '(funcall expander (alexandria:ensure-list type) nil)
+                       '(funcall expander args))
            #+abcl(apply expander args)
            t)
           (values type nil)))))
@@ -109,9 +111,9 @@ https://ecl.common-lisp.dev/posts/ECL-26327-release.html"
   #+clisp
   (ext:type-expand type env)
   #+ecl
-  (if (ecl-new-deftype-api-p)
-      (si::expand-deftype type nil)
-      (si::expand-deftype type))
+  #.(if (ecl-new-deftype-api-p)
+        '(si::expand-deftype type nil)
+        '(si::expand-deftype type))
   #+lispworks
   (type::expand-user-type type))
 )
